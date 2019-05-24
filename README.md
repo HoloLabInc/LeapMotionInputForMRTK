@@ -2,7 +2,8 @@
 LeapMotionInputForMRTK simulates hand inputs for MRTK with Leap Motion.
 
 ## Demo video
-[![Demo video](http://img.youtube.com/vi/mO12HbhFhDk/0.jpg)](http://www.youtube.com/watch?v=mO12HbhFhDk)
+[![Demo video](http://img.youtube.com/vi/jJw2ULaQsXM/0.jpg)](http://www.youtube.com/watch?v=jJw2ULaQsXM)
+
 
 # Prerequisites
 - Unity 2018.3.x
