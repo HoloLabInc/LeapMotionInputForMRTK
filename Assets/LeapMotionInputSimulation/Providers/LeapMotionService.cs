@@ -29,6 +29,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
         private IMixedRealityController[] activeControllers = new IMixedRealityController[0];
 
         private LeapProvider leapProvider;
+        private HandModelManager handModelManager;
 
         public override IMixedRealityController[] GetActiveControllers()
         {
@@ -43,13 +44,23 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 leapProvider = Hands.Provider;
             }
 
-            if (leapProvider != null)
-            {
-                leapProvider.OnUpdateFrame += OnUpdateFrame;
-            }
-            else
+            if (leapProvider == null)
             {
                 Debug.LogError("Leap Provider not found");
+                return;
+            }
+
+            leapProvider.OnUpdateFrame += OnUpdateFrame;
+
+            if(handModelManager == null)
+            {
+                handModelManager = leapProvider.GetComponentInChildren<HandModelManager>();
+            }
+
+            if (handModelManager == null)
+            {
+                Debug.LogWarning("Hand Model Manager not found");
+                return;
             }
         }
 
@@ -66,6 +77,25 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             {
                 var controller = GetOrAddHand(hand);
                 controller.UpdateController(hand);
+
+                if (handModelManager)
+                {
+                    var handModel = handModelManager.GetHandModel<HandModelBase>(hand.Id);
+                    var skinnedMeshRenderer = handModel?.GetComponentInChildren<SkinnedMeshRenderer>();
+                    if (skinnedMeshRenderer != null)
+                    {
+                        skinnedMeshRenderer.materials = new Material[0];
+                    }
+
+                    var mesh = new Mesh();
+                    skinnedMeshRenderer?.BakeMesh(mesh);
+                    var handMeshInfo = MeshToHandMeshInfo(mesh);
+
+                    if (handMeshInfo != null)
+                    {
+                        controller.UpdateHandMesh(handMeshInfo);
+                    }
+                }
             }
 
             // remove lost hands
@@ -140,6 +170,26 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             }
             trackedHands.Clear();
             UpdateActiveControllers();
+        }
+
+        private HandMeshInfo MeshToHandMeshInfo(Mesh mesh)
+        {
+            if(mesh == null || mesh.vertexCount == 0)
+            {
+                return null;
+            }
+
+            HandMeshInfo handMeshInfo = new HandMeshInfo
+            {
+                vertices = mesh.vertices,
+                normals = mesh.normals,
+                triangles = mesh.triangles,
+                uvs = mesh.uv,
+                position = Vector3.zero,
+                rotation = Quaternion.identity
+            };
+
+            return handMeshInfo;
         }
 
         private void UpdateActiveControllers()
