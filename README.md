@@ -33,8 +33,8 @@ Download and import MRTK v2 unitypackages.
 - Microsoft.MixedReality.Toolkit.Unity.Foundation-v2.0.0-RC1-Refresh.unitypackage
 
 ### Import LeapMotionInputForMRTK
-Download and import LeapMotionInputForMRTK unitypackage.  
-(https://github.com/HoloLabInc/LeapMotionInputForMRTK/releases/tag/v0.1)
+Download and import the latest LeapMotionInputForMRTK unitypackage.  
+(https://github.com/HoloLabInc/LeapMotionInputForMRTK/releases)
 
 
 ## 2. Import Leap Motion Core Assets
