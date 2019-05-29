@@ -100,13 +100,15 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                     }
 
                     // update hand mesh
-                    var mesh = new Mesh();
-                    skinnedMeshRenderer?.BakeMesh(mesh);
-                    var handMeshInfo = MeshToHandMeshInfo(mesh);
-
-                    if (handMeshInfo != null)
+                    if (skinnedMeshRenderer != null)
                     {
-                        controller.UpdateHandMesh(handMeshInfo);
+                        var mesh = new Mesh();
+                        skinnedMeshRenderer.BakeMesh(mesh);
+                        var handMeshInfo = MeshToHandMeshInfo(mesh, skinnedMeshRenderer.transform.position, skinnedMeshRenderer.transform.rotation);
+                        if (handMeshInfo != null)
+                        {
+                            controller.UpdateHandMesh(handMeshInfo);
+                        }
                     }
                 }
             }
@@ -187,7 +189,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             UpdateActiveControllers();
         }
 
-        private HandMeshInfo MeshToHandMeshInfo(Mesh mesh)
+        private HandMeshInfo MeshToHandMeshInfo(Mesh mesh, Vector3 position, Quaternion rotation)
         {
             if(mesh == null || mesh.vertexCount == 0)
             {
@@ -200,8 +202,8 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 normals = mesh.normals,
                 triangles = mesh.triangles,
                 uvs = mesh.uv,
-                position = Vector3.zero,
-                rotation = Quaternion.identity
+                position = position,
+                rotation = rotation
             };
 
             return handMeshInfo;
