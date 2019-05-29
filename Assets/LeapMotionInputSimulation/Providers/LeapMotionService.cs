@@ -26,6 +26,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             BaseMixedRealityProfile profile = null) : base(registrar, inputSystem, inputSystemProfile, playspace, name, priority, profile) { }
 
         private Dictionary<int, LeapMotionHand> trackedHands = new Dictionary<int, LeapMotionHand>();
+        private Dictionary<int, SkinnedMeshRenderer> handMeshRenderers = new Dictionary<int, SkinnedMeshRenderer>();
         private IMixedRealityController[] activeControllers = new IMixedRealityController[0];
 
         private LeapProvider leapProvider;
@@ -80,13 +81,25 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
 
                 if (handModelManager)
                 {
-                    var handModel = handModelManager.GetHandModel<HandModelBase>(hand.Id);
-                    var skinnedMeshRenderer = handModel?.GetComponentInChildren<SkinnedMeshRenderer>();
-                    if (skinnedMeshRenderer != null)
+                    SkinnedMeshRenderer skinnedMeshRenderer;
+                    if (handMeshRenderers.ContainsKey(hand.Id))
                     {
-                        skinnedMeshRenderer.materials = new Material[0];
+                        skinnedMeshRenderer = handMeshRenderers[hand.Id];
+                    }
+                    else
+                    {
+                        var handModel = handModelManager.GetHandModel<HandModelBase>(hand.Id);
+                        skinnedMeshRenderer = handModel?.GetComponentInChildren<SkinnedMeshRenderer>();
+
+                        if (skinnedMeshRenderer != null)
+                        {
+                            // hide original mesh
+                            skinnedMeshRenderer.materials = new Material[0];
+                            handMeshRenderers.Add(hand.Id, skinnedMeshRenderer);
+                        }
                     }
 
+                    // update hand mesh
                     var mesh = new Mesh();
                     skinnedMeshRenderer?.BakeMesh(mesh);
                     var handMeshInfo = MeshToHandMeshInfo(mesh);
@@ -105,6 +118,8 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 {
                     RemoveHandDevice(handId);
                 };
+
+                handMeshRenderers.Remove(handId);
             }
         }
 
