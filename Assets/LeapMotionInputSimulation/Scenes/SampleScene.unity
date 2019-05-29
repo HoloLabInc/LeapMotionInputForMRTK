@@ -5290,6 +5290,7 @@ GameObject:
   - component: {fileID: 534669907}
   - component: {fileID: 534669906}
   - component: {fileID: 534669909}
+  - component: {fileID: 534669910}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -5443,6 +5444,30 @@ MonoBehaviour:
   _temporalWarpingMode: 0
   _customWarpAdjustment: 17
   _updateHandInPrecull: 0
+--- !u!114 &534669910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c592f16851a620743868a31232613370, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _leapProvider: {fileID: 0}
+  ModelPool:
+  - GroupName: Rigged Hands
+    _handModelManager: {fileID: 0}
+    LeftModel: {fileID: 114994683550464134, guid: 2aa010a1e75292e49a24f3f71bb9cddb,
+      type: 3}
+    IsLeftToBeSpawned: 1
+    RightModel: {fileID: 114245269363414434, guid: 2276723046d707c4f94d431ceb80ab92,
+      type: 3}
+    IsRightToBeSpawned: 1
+    IsEnabled: 1
+    CanDuplicate: 1
 --- !u!1001 &535323484
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -51,14 +51,54 @@ Drag and drop Assets\LeapMotionInputSimulation\LeapMotionMixedRealityToolkitConf
 
 ![SceneSetting](https://user-images.githubusercontent.com/4415085/58233879-2ada2e00-7d78-11e9-81e7-09c0e68ac23a.png)
 
-After the scene is loaded, select "Main Camera" in Hirerarchy and add "Leap XR Service Provider" component.
+After the scene is loaded, select "Main Camera" in Hirerarchy and add LeapXRServiceProvider component.
 
 ![LeapXRServiceProvider](https://user-images.githubusercontent.com/4415085/58233883-2dd51e80-7d78-11e9-82a3-4a037223d1c9.png)
 
-## 4. Switch platform
+### Enable Hand Mesh
+If you want to enable Hand Mesh, attach HandModelManager script to "Main Camera".  
+Edit the component like the following picture.  
+LoPoly Rigged Hand prefabs are in Assets\LeapMotion\Core\Prefabs\HandModelsNonHuman folder.
+
+![HandModelmanager](https://user-images.githubusercontent.com/4415085/58534145-65831100-8225-11e9-98fc-8772f3166f4c.png)
+
+## 4. Fix MRTK v2
+There is a bug in MRTK v2.  
+(https://github.com/microsoft/MixedRealityToolkit-Unity/issues/4607)  
+
+To fix the bug, edit Assets\MixedRealityToolkit\Providers\Hands\BaseHandVisualizer.cs.
+
+l.147- 
+```cs
+if (handMeshFilter != null)
+{
+    Mesh mesh = handMeshFilter.mesh;
+
+    if((mesh.vertices?.Length ?? 0) != 0 && 
+        mesh.vertices?.Length != eventData.InputData.vertices?.Length)
+    {
+        mesh.Clear();
+    }
+    mesh.vertices = eventData.InputData.vertices;
+    mesh.normals = eventData.InputData.normals;
+    mesh.triangles = eventData.InputData.triangles;
+
+    if (eventData.InputData.uvs != null && eventData.InputData.uvs.Length > 0)
+    {
+        mesh.uv = eventData.InputData.uvs;
+    }
+
+    mesh.RecalculateBounds();
+
+    handMeshFilter.transform.position = eventData.InputData.position;
+    handMeshFilter.transform.rotation = eventData.InputData.rotation;
+}
+```
+
+## 5. Switch platform
 In the Build Settings window, switch platform to Universal Windows Platform.
 
-## 5. Mount Leap Motion on HoloLens (1st gen)
+## 6. Mount Leap Motion on HoloLens (1st gen)
 Mount Leap Motion on HoloLens like the following picture.
 
 ![MountedLeapMotion_small](https://user-images.githubusercontent.com/4415085/58304554-bebb0100-7e2f-11e9-8b74-7bef033bddc6.jpg)
@@ -67,7 +107,7 @@ Adjust the offset and tilt values.
 
 ![image](https://user-images.githubusercontent.com/4415085/58302558-bdd1a180-7e26-11e9-8282-82a57d88c052.png)
 
-## 6. Play in Unity Editor
+## 7. Play in Unity Editor
 On your HoloLens, start the Holographic Remoting Player app.
 
 In Unity, select "Window > XR > Holographic Emulation".  
@@ -76,6 +116,9 @@ Enter the IP address of your HoloLens and press Connect button.
 ![HolographicRemoting](https://user-images.githubusercontent.com/4415085/58303095-8284a200-7e29-11e9-8efe-dbe88019b629.png)
 
 Press Play button in Unity Editor.
+
+# Author
+Furuta, Yusuke ([@tarukosu](https://twitter.com/tarukosu))
 
 # License
 MIT

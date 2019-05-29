@@ -160,7 +160,13 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 }
             }
         }
-        
+
+        public void UpdateHandMesh(HandMeshInfo handMeshInfo)
+        {
+            MixedRealityToolkit.InputSystem?.RaiseHandMeshUpdated(InputSource, ControllerHandedness, handMeshInfo);
+        }
+
+
         private void UpdateTriggerData(Hand hand, MixedRealityInteractionMapping interactionMapping)
         {
             interactionMapping.BoolData = IsPinching;

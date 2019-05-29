@@ -26,9 +26,11 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             BaseMixedRealityProfile profile = null) : base(registrar, inputSystem, inputSystemProfile, playspace, name, priority, profile) { }
 
         private Dictionary<int, LeapMotionHand> trackedHands = new Dictionary<int, LeapMotionHand>();
+        private Dictionary<int, SkinnedMeshRenderer> handMeshRenderers = new Dictionary<int, SkinnedMeshRenderer>();
         private IMixedRealityController[] activeControllers = new IMixedRealityController[0];
 
         private LeapProvider leapProvider;
+        private HandModelManager handModelManager;
 
         public override IMixedRealityController[] GetActiveControllers()
         {
@@ -43,13 +45,23 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 leapProvider = Hands.Provider;
             }
 
-            if (leapProvider != null)
-            {
-                leapProvider.OnUpdateFrame += OnUpdateFrame;
-            }
-            else
+            if (leapProvider == null)
             {
                 Debug.LogError("Leap Provider not found");
+                return;
+            }
+
+            leapProvider.OnUpdateFrame += OnUpdateFrame;
+
+            if(handModelManager == null)
+            {
+                handModelManager = leapProvider.GetComponentInChildren<HandModelManager>();
+            }
+
+            if (handModelManager == null)
+            {
+                Debug.LogWarning("Hand Model Manager not found");
+                return;
             }
         }
 
@@ -66,6 +78,50 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             {
                 var controller = GetOrAddHand(hand);
                 controller.UpdateController(hand);
+
+                if (handModelManager)
+                {
+                    SkinnedMeshRenderer skinnedMeshRenderer;
+                    if (handMeshRenderers.ContainsKey(hand.Id))
+                    {
+                        skinnedMeshRenderer = handMeshRenderers[hand.Id];
+                    }
+                    else
+                    {
+                        var handModel = handModelManager.GetHandModel<HandModelBase>(hand.Id);
+                        skinnedMeshRenderer = handModel?.GetComponentInChildren<SkinnedMeshRenderer>();
+
+                        if (skinnedMeshRenderer != null)
+                        {
+                            // hide original mesh
+                            skinnedMeshRenderer.materials = new Material[0];
+                            handMeshRenderers.Add(hand.Id, skinnedMeshRenderer);
+                        }
+                    }
+
+                    if (MixedRealityToolkit.Instance.ActiveProfile.InputSystemProfile.HandTrackingProfile.EnableHandMeshVisualization)
+                    {
+                        // update hand mesh
+                        if (skinnedMeshRenderer != null)
+                        {
+                            var mesh = new Mesh();
+                            skinnedMeshRenderer.BakeMesh(mesh);
+                            var handMeshInfo = MeshToHandMeshInfo(mesh, skinnedMeshRenderer.transform.position, skinnedMeshRenderer.transform.rotation);
+                            if (handMeshInfo != null)
+                            {
+                                controller.UpdateHandMesh(handMeshInfo);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // clear hand mesh
+                        if (handMeshRenderers.ContainsKey(hand.Id))
+                        {
+                            controller.UpdateHandMesh(new HandMeshInfo());
+                        }
+                    }
+                }
             }
 
             // remove lost hands
@@ -75,6 +131,8 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 {
                     RemoveHandDevice(handId);
                 };
+
+                handMeshRenderers.Remove(handId);
             }
         }
 
@@ -140,6 +198,26 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             }
             trackedHands.Clear();
             UpdateActiveControllers();
+        }
+
+        private HandMeshInfo MeshToHandMeshInfo(Mesh mesh, Vector3 position, Quaternion rotation)
+        {
+            if(mesh == null || mesh.vertexCount == 0)
+            {
+                return null;
+            }
+
+            HandMeshInfo handMeshInfo = new HandMeshInfo
+            {
+                vertices = mesh.vertices,
+                normals = mesh.normals,
+                triangles = mesh.triangles,
+                uvs = mesh.uv,
+                position = position,
+                rotation = rotation
+            };
+
+            return handMeshInfo;
         }
 
         private void UpdateActiveControllers()
