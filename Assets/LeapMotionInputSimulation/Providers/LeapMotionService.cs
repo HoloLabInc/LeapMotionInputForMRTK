@@ -99,15 +99,26 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                         }
                     }
 
-                    // update hand mesh
-                    if (skinnedMeshRenderer != null)
+                    if (MixedRealityToolkit.Instance.ActiveProfile.InputSystemProfile.HandTrackingProfile.EnableHandMeshVisualization)
                     {
-                        var mesh = new Mesh();
-                        skinnedMeshRenderer.BakeMesh(mesh);
-                        var handMeshInfo = MeshToHandMeshInfo(mesh, skinnedMeshRenderer.transform.position, skinnedMeshRenderer.transform.rotation);
-                        if (handMeshInfo != null)
+                        // update hand mesh
+                        if (skinnedMeshRenderer != null)
                         {
-                            controller.UpdateHandMesh(handMeshInfo);
+                            var mesh = new Mesh();
+                            skinnedMeshRenderer.BakeMesh(mesh);
+                            var handMeshInfo = MeshToHandMeshInfo(mesh, skinnedMeshRenderer.transform.position, skinnedMeshRenderer.transform.rotation);
+                            if (handMeshInfo != null)
+                            {
+                                controller.UpdateHandMesh(handMeshInfo);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // clear hand mesh
+                        if (handMeshRenderers.ContainsKey(hand.Id))
+                        {
+                            controller.UpdateHandMesh(new HandMeshInfo());
                         }
                     }
                 }
