@@ -2,7 +2,7 @@
 LeapMotionInputForMRTK simulates hand inputs for MRTK with Leap Motion.
 
 ## Demo video
-[![Demo video](http://img.youtube.com/vi/jJw2ULaQsXM/0.jpg)](http://www.youtube.com/watch?v=jJw2ULaQsXM)
+[![Demo video](http://img.youtube.com/vi/kS4M85WSqDM/0.jpg)](http://www.youtube.com/watch?v=kS4M85WSqDM)
 
 
 # Prerequisites
@@ -99,7 +99,8 @@ if (handMeshFilter != null)
 In the Build Settings window, switch platform to Universal Windows Platform.
 
 ## 6. Mount Leap Motion on HoloLens (1st gen)
-Mount Leap Motion on HoloLens like the following picture.
+Mount Leap Motion on HoloLens like the following picture.  
+[3D Printable Models](https://github.com/HoloLabInc/3dPrintableModels) 
 
 ![MountedLeapMotion_small](https://user-images.githubusercontent.com/4415085/58304554-bebb0100-7e2f-11e9-8b74-7bef033bddc6.jpg)
 
