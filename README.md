@@ -27,10 +27,10 @@ Create project with Unity 2018.3.x.
 
 ### Import MRTK v2
 Download and import MRTK v2 unitypackages.  
-(https://github.com/microsoft/MixedRealityToolkit-Unity/releases/tag/v2.0.0-RC1-Refresh)
+(https://github.com/microsoft/MixedRealityToolkit-Unity/releases/tag/v2.0.0-RC2.1)
 
-- Microsoft.MixedReality.Toolkit.Unity.Examples-v2.0.0-RC1-Refresh.unitypackage
-- Microsoft.MixedReality.Toolkit.Unity.Foundation-v2.0.0-RC1-Refresh.unitypackage
+- Microsoft.MixedReality.Toolkit.Unity.Examples-v2.0.0-RC2.1.unitypackage
+- Microsoft.MixedReality.Toolkit.Unity.Foundation-v2.0.0-RC2.1.unitypackage
 
 ### Import LeapMotionInputForMRTK
 Download and import the latest LeapMotionInputForMRTK unitypackage.  
