@@ -19,11 +19,9 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
         public LeapMotionService(
             IMixedRealityServiceRegistrar registrar,
             IMixedRealityInputSystem inputSystem,
-            MixedRealityInputSystemProfile inputSystemProfile,
-            Transform playspace,
             string name = null,
             uint priority = DefaultPriority,
-            BaseMixedRealityProfile profile = null) : base(registrar, inputSystem, inputSystemProfile, playspace, name, priority, profile) { }
+            BaseMixedRealityProfile profile = null) : base(registrar, inputSystem, name, priority, profile) { }
 
         private Dictionary<int, LeapMotionHand> trackedHands = new Dictionary<int, LeapMotionHand>();
         private Dictionary<int, SkinnedMeshRenderer> handMeshRenderers = new Dictionary<int, SkinnedMeshRenderer>();
