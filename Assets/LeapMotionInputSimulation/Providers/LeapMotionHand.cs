@@ -14,8 +14,20 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
     [MixedRealityController(
         SupportedControllerType.ArticulatedHand,
         new[] { Handedness.Left, Handedness.Right })]
-    public class LeapMotionHand : WindowsMixedRealityController, IMixedRealityHand
+    public class LeapMotionHand : SimulatedHand
     {
+        public override HandSimulationMode SimulationMode => HandSimulationMode.Articulated;
+
+        private Vector3 currentPointerPosition = Vector3.zero;
+        private Quaternion currentPointerRotation = Quaternion.identity;
+        private MixedRealityPose lastPointerPose = MixedRealityPose.ZeroIdentity;
+        private MixedRealityPose currentPointerPose = MixedRealityPose.ZeroIdentity;
+        private MixedRealityPose currentIndexPose = MixedRealityPose.ZeroIdentity;
+        private MixedRealityPose currentGripPose = MixedRealityPose.ZeroIdentity;
+        private MixedRealityPose lastGripPose = MixedRealityPose.ZeroIdentity;
+
+        private SimulatedHandData handData = new SimulatedHandData();
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -34,16 +46,6 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             new MixedRealityInteractionMapping(3, "Grab", AxisType.SingleAxis, DeviceInputType.TriggerPress, MixedRealityInputAction.None),
             new MixedRealityInteractionMapping(4, "Index Finger Pose", AxisType.SixDof, DeviceInputType.IndexFinger, MixedRealityInputAction.None)
         };
-
-        #region IMixedRealityHand Implementation
-
-        /// <inheritdoc/>
-        public bool TryGetJoint(TrackedHandJoint joint, out MixedRealityPose pose)
-        {
-            return unityJointPoses.TryGetValue(joint, out pose);
-        }
-
-        #endregion IMixedRealityHand Implementation
 
         public override bool IsInPointingPose
         {
@@ -70,23 +72,11 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             }
         }
 
-        private readonly Dictionary<TrackedHandJoint, MixedRealityPose> unityJointPoses = new Dictionary<TrackedHandJoint, MixedRealityPose>();
-
-        private MixedRealityPose currentIndexPose = MixedRealityPose.ZeroIdentity;
-        private MixedRealityPose currentGripPose = MixedRealityPose.ZeroIdentity;
-
-        private Vector3 currentPointerPosition = Vector3.zero;
-        private Quaternion currentPointerRotation = Quaternion.identity;
-        private MixedRealityPose currentPointerPose = MixedRealityPose.ZeroIdentity;
-
-        private readonly HandRay handRay = new HandRay();
-
         private readonly float CursorBeamBackwardTolerance = 0.5f;
         private readonly float CursorBeamUpTolerance = 0.8f;
 
         private readonly float StartPinchingDistance = 0.04f;
         private readonly float StopPinchingDistance = 0.05f;
-
 
         private bool isPinching = false;
         protected bool IsPinching
@@ -118,6 +108,12 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             }
         }
 
+        public override void SetupDefaultInteractions(Handedness controllerHandedness)
+        {
+            AssignControllerMappings(DefaultInteractions);
+        }
+
+
         #region Update data functions
 
         public void UpdateController(Hand hand)
@@ -132,30 +128,101 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 Enabled = false;
             }
 
-            UpdateCurrentPoses();
+            handData.Update(true, IsPinching, (joints) => { });
+            UpdateInteractions(handData);
+        }
+
+        protected override void UpdateInteractions(SimulatedHandData handData)
+        {
+            lastPointerPose = currentPointerPose;
+            lastGripPose = currentGripPose;
+
+            Vector3 pointerPosition = jointPoses[TrackedHandJoint.Palm].Position;
+            IsPositionAvailable = IsRotationAvailable = pointerPosition != Vector3.zero;
+
+            if (IsPositionAvailable)
+            {
+                HandRay.Update(pointerPosition, GetPalmNormal(), CameraCache.Main.transform, ControllerHandedness);
+
+                Ray ray = HandRay.Ray;
+
+                currentPointerPose.Position = ray.origin;
+                currentPointerPose.Rotation = Quaternion.LookRotation(ray.direction);
+
+                currentGripPose = jointPoses[TrackedHandJoint.Palm];
+                currentIndexPose = jointPoses[TrackedHandJoint.IndexTip];
+            }
+
+            if (lastGripPose != currentGripPose)
+            {
+                if (IsPositionAvailable && IsRotationAvailable)
+                {
+                    InputSystem?.RaiseSourcePoseChanged(InputSource, this, currentGripPose);
+                }
+                else if (IsPositionAvailable && !IsRotationAvailable)
+                {
+                    InputSystem?.RaiseSourcePositionChanged(InputSource, this, currentPointerPosition);
+                }
+                else if (!IsPositionAvailable && IsRotationAvailable)
+                {
+                    InputSystem?.RaiseSourceRotationChanged(InputSource, this, currentPointerRotation);
+                }
+            }
 
             for (int i = 0; i < Interactions?.Length; i++)
             {
                 switch (Interactions[i].InputType)
                 {
-                    case DeviceInputType.None:
-                        break;
                     case DeviceInputType.SpatialPointer:
-                        UpdatePointerData(hand, Interactions[i]);
-                        break;
-                    case DeviceInputType.Select:
-                    case DeviceInputType.TriggerPress:
-                        UpdateTriggerData(hand, Interactions[i]);
+                        Interactions[i].PoseData = currentPointerPose;
+                        if (Interactions[i].Changed)
+                        {
+                            InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction, currentPointerPose);
+                        }
                         break;
                     case DeviceInputType.SpatialGrip:
-                         UpdateGripData(hand, Interactions[i]);
+                        Interactions[i].PoseData = currentGripPose;
+                        if (Interactions[i].Changed)
+                        {
+                            InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction, currentGripPose);
+                        }
+                        break;
+                    case DeviceInputType.Select:
+                        Interactions[i].BoolData = handData.IsPinching;
+
+                        if (Interactions[i].Changed)
+                        {
+                            if (Interactions[i].BoolData)
+                            {
+                                InputSystem?.RaiseOnInputDown(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction);
+                            }
+                            else
+                            {
+                                InputSystem?.RaiseOnInputUp(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction);
+                            }
+                        }
+                        break;
+                    case DeviceInputType.TriggerPress:
+                        Interactions[i].BoolData = handData.IsPinching;
+
+                        if (Interactions[i].Changed)
+                        {
+                            if (Interactions[i].BoolData)
+                            {
+                                InputSystem?.RaiseOnInputDown(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction);
+                            }
+                            else
+                            {
+                                InputSystem?.RaiseOnInputUp(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction);
+                            }
+                        }
                         break;
                     case DeviceInputType.IndexFinger:
-                        UpdateIndexFingerData(hand, Interactions[i]);
-                        break;
-                    default:
-                        Debug.LogError($"Input [{Interactions[i].InputType}] is not handled for this controller [WindowsMixedRealityArticulatedHand]");
-                        Enabled = false;
+                        Interactions[i].PoseData = currentIndexPose;
+                        if (Interactions[i].Changed)
+                        {
+                            InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, Interactions[i].MixedRealityInputAction, currentIndexPose);
+                        }
                         break;
                 }
             }
@@ -163,97 +230,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
 
         public void UpdateHandMesh(HandMeshInfo handMeshInfo)
         {
-            MixedRealityToolkit.InputSystem?.RaiseHandMeshUpdated(InputSource, ControllerHandedness, handMeshInfo);
-        }
-
-
-        private void UpdateTriggerData(Hand hand, MixedRealityInteractionMapping interactionMapping)
-        {
-            interactionMapping.BoolData = IsPinching;
-
-            if (interactionMapping.Changed)
-            {
-                if (interactionMapping.BoolData)
-                {
-                    MixedRealityToolkit.InputSystem?.RaiseOnInputDown(InputSource, ControllerHandedness, interactionMapping.MixedRealityInputAction);
-                }
-                else
-                {
-                    MixedRealityToolkit.InputSystem?.RaiseOnInputUp(InputSource, ControllerHandedness, interactionMapping.MixedRealityInputAction);
-                }
-            }
-        }
-
-        private void UpdateGripData(Hand hand, MixedRealityInteractionMapping interactionMapping)
-        {
-            interactionMapping.PoseData = currentGripPose;
-
-            if (interactionMapping.Changed)
-            {
-                // Raise input system Event if it enabled
-                MixedRealityToolkit.InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, interactionMapping.MixedRealityInputAction, currentGripPose);
-            }
-        }
-
-        protected void UpdatePointerData(Hand hand, MixedRealityInteractionMapping interactionMapping)
-        {
-            interactionMapping.PoseData = currentPointerPose;
-
-            // If our value changed raise it.
-            if (interactionMapping.Changed)
-            {
-                // Raise input system Event if it enabled
-                MixedRealityToolkit.InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, interactionMapping.MixedRealityInputAction, currentPointerPose);
-            }
-        }
-
-        private void UpdateIndexFingerData(Hand hand, MixedRealityInteractionMapping interactionMapping)
-        {
-            interactionMapping.PoseData = currentIndexPose;
-
-            // If our value changed raise it.
-            if (interactionMapping.Changed)
-            {
-                // Raise input system Event if it enabled
-                MixedRealityToolkit.InputSystem?.RaisePoseInputChanged(InputSource, ControllerHandedness, interactionMapping.MixedRealityInputAction, currentIndexPose);
-            }
-        }
-
-        protected void UpdateCurrentPoses()
-        {
-            var gotIndex = TryGetJoint(TrackedHandJoint.IndexTip, out var indexTipPose);
-            var gotPalm = TryGetJoint(TrackedHandJoint.Palm, out var palmPose);
-
-            if (!gotIndex || !gotPalm)
-            {
-                return;
-            }
-
-            // update index pose
-            currentIndexPose.Position = indexTipPose.Position;
-            currentIndexPose.Rotation = indexTipPose.Rotation;
-
-            // update grip pose
-            currentGripPose.Position = palmPose.Position;
-            currentGripPose.Rotation = palmPose.Rotation;
-            MixedRealityToolkit.InputSystem?.RaiseSourcePoseChanged(InputSource, this, currentGripPose);
-
-            // update pointer pose;
-            var pointerOrigin = palmPose.Position;
-            handRay.Update(pointerOrigin, GetPalmNormal(), CameraCache.Main.transform, ControllerHandedness);
-            Ray ray = handRay.Ray;
-
-            currentPointerPose.Position = ray.origin;
-            currentPointerPose.Rotation = Quaternion.LookRotation(ray.direction);
-        }
-
-        protected Vector3 GetPalmNormal()
-        {
-            if (TryGetJoint(TrackedHandJoint.Palm, out MixedRealityPose pose))
-            {
-                return -pose.Up;
-            }
-            return Vector3.zero;
+            CoreServices.InputSystem?.RaiseHandMeshUpdated(InputSource, ControllerHandedness, handMeshInfo);
         }
 
         protected TrackedHandJoint ConvertBoneToTrackedHandJoint(Finger.FingerType fingerType, Bone.BoneType boneType)
@@ -382,13 +359,13 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
         {
             var pose = new MixedRealityPose(position, rotation);
 
-            if (!unityJointPoses.ContainsKey(joint))
+            if (!jointPoses.ContainsKey(joint))
             {
-                unityJointPoses.Add(joint, pose);
+                jointPoses.Add(joint, pose);
             }
             else
             {
-                unityJointPoses[joint] = pose;
+                jointPoses[joint] = pose;
             }
         }
 
@@ -408,7 +385,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             UpdateJointPose(TrackedHandJoint.Palm, hand.PalmPosition.ToVector3(), palmRotation);
             UpdateJointPose(TrackedHandJoint.Wrist, hand.WristPosition.ToVector3(), palmRotation);
 
-            MixedRealityToolkit.InputSystem?.RaiseHandJointsUpdated(InputSource, ControllerHandedness, unityJointPoses);
+            CoreServices.InputSystem?.RaiseHandJointsUpdated(InputSource, ControllerHandedness, jointPoses);
         }
 
         #endregion Update data functions

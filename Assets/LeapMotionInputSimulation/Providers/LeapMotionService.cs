@@ -14,7 +14,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
         typeof(IMixedRealityInputSystem),
         SupportedPlatforms.WindowsEditor,
         "Leap Motion Input Simulator")]
-    public class LeapMotionService : BaseInputDeviceManager
+    public class LeapMotionService : BaseInputDeviceManager, IMixedRealityCapabilityCheck
     {
         public LeapMotionService(
             IMixedRealityServiceRegistrar registrar,
@@ -51,7 +51,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
 
             leapProvider.OnUpdateFrame += OnUpdateFrame;
 
-            if(handModelManager == null)
+            if (handModelManager == null)
             {
                 handModelManager = leapProvider.GetComponentInChildren<HandModelManager>();
             }
@@ -142,7 +142,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             if (trackedHands.ContainsKey(handId))
             {
                 var existingHand = trackedHands[handId];
-                if(existingHand.ControllerHandedness == handedness)
+                if (existingHand.ControllerHandedness == handedness)
                 {
                     return existingHand;
                 }
@@ -153,11 +153,9 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             }
 
             // Add new hand
-            IMixedRealityInputSystem inputSystem = Service as IMixedRealityInputSystem;
-
             var pointers = RequestPointers(SupportedControllerType.ArticulatedHand, handedness);
             var inputSourceType = InputSourceType.Hand;
-            var inputSource = inputSystem?.RequestNewGenericInputSource($"Leap Motion Hand {handId}", pointers, inputSourceType);
+            var inputSource = InputSystem?.RequestNewGenericInputSource($"Leap Motion Hand {handId}", pointers, inputSourceType);
 
             var controller = new LeapMotionHand(TrackingState.Tracked, handedness, inputSource);
             controller.SetupConfiguration(typeof(LeapMotionHand), inputSourceType);
@@ -167,7 +165,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 controller.InputSource.Pointers[i].Controller = controller;
             }
 
-            inputSystem?.RaiseSourceDetected(inputSource, controller);
+            InputSystem?.RaiseSourceDetected(controller.InputSource, controller);
 
             trackedHands.Add(handId, controller);
             UpdateActiveControllers();
@@ -200,7 +198,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
 
         private HandMeshInfo MeshToHandMeshInfo(Mesh mesh, Vector3 position, Quaternion rotation)
         {
-            if(mesh == null || mesh.vertexCount == 0)
+            if (mesh == null || mesh.vertexCount == 0)
             {
                 return null;
             }
@@ -237,6 +235,11 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             {
                 return Handedness.Other;
             }
+        }
+
+        public bool CheckCapability(MixedRealityCapability capability)
+        {
+            return capability == MixedRealityCapability.ArticulatedHand;
         }
     }
 }
