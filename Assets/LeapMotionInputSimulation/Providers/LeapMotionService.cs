@@ -181,7 +181,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             {
                 var controller = trackedHands[handId];
 
-                MixedRealityToolkit.InputSystem?.RaiseSourceLost(controller.InputSource, controller);
+                CoreServices.InputSystem?.RaiseSourceLost(controller.InputSource, controller);
 
                 trackedHands.Remove(handId);
                 UpdateActiveControllers();
@@ -192,7 +192,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
         {
             foreach (var controller in trackedHands.Values)
             {
-                MixedRealityToolkit.InputSystem?.RaiseSourceLost(controller.InputSource, controller);
+                CoreServices.InputSystem?.RaiseSourceLost(controller.InputSource, controller);
             }
             trackedHands.Clear();
             UpdateActiveControllers();
