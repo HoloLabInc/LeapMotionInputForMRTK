@@ -70,7 +70,7 @@ There is a bug in MRTK v2.
 
 To fix the bug, edit Assets\MixedRealityToolkit\Providers\Hands\BaseHandVisualizer.cs.
 
-l.147- 
+l.174- 
 ```cs
 if (handMeshFilter != null)
 {
