@@ -6,7 +6,7 @@ LeapMotionInputForMRTK simulates hand inputs for MRTK with Leap Motion.
 
 
 # Prerequisites
-- Unity 2018.3.x
+- Unity 2018.4.x
 - HoloLens (1st gen)
 - Leap Motion
 - Leap Motion SDK (https://developer.leapmotion.com/get-started)
@@ -20,17 +20,19 @@ LeapMotionInputForMRTK simulates hand inputs for MRTK with Leap Motion.
 > External\createSymlink.bat
 ```
 
-Open LeapMotionInputForMRTK project with Unity 2018.3.x.
+Open LeapMotionInputForMRTK project with Unity 2018.4.x.
 
 ## 1.B. Import unitypackage
-Create project with Unity 2018.3.x.
+Create project with Unity 2018.4.x.
 
 ### Import MRTK v2
 Download and import MRTK v2 unitypackages.  
-(https://github.com/microsoft/MixedRealityToolkit-Unity/releases/tag/v2.0.0-RC2.1)
+(https://github.com/microsoft/MixedRealityToolkit-Unity/releases/tag/v2.0.0)
 
-- Microsoft.MixedReality.Toolkit.Unity.Examples-v2.0.0-RC2.1.unitypackage
-- Microsoft.MixedReality.Toolkit.Unity.Foundation-v2.0.0-RC2.1.unitypackage
+- Microsoft.MixedRealityToolkit.Unity.Foundation.2.0.0.unitypackage
+- Microsoft.MixedRealityToolkit.Unity.Extensions.2.0.0.unitypackage
+- Microsoft.MixedRealityToolkit.Unity.Tools.2.0.0.unitypackage
+- Microsoft.MixedRealityToolkit.Unity.Examples.2.0.0.unitypackage
 
 ### Import LeapMotionInputForMRTK
 Download and import the latest LeapMotionInputForMRTK unitypackage.  
