@@ -12,16 +12,16 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
 {
     [MixedRealityDataProvider(
         typeof(IMixedRealityInputSystem),
-        SupportedPlatforms.WindowsEditor,
+        SupportedPlatforms.WindowsEditor | SupportedPlatforms.LinuxEditor | SupportedPlatforms.MacEditor |
+        SupportedPlatforms.WindowsStandalone | SupportedPlatforms.LinuxStandalone | SupportedPlatforms.MacStandalone,
         "Leap Motion Input Simulator")]
     public class LeapMotionService : BaseInputDeviceManager, IMixedRealityCapabilityCheck
     {
         public LeapMotionService(
-            IMixedRealityServiceRegistrar registrar,
             IMixedRealityInputSystem inputSystem,
             string name = null,
             uint priority = DefaultPriority,
-            BaseMixedRealityProfile profile = null) : base(registrar, inputSystem, name, priority, profile) { }
+            BaseMixedRealityProfile profile = null) : base(inputSystem, name, priority, profile) { }
 
         private Dictionary<int, LeapMotionHand> trackedHands = new Dictionary<int, LeapMotionHand>();
         private Dictionary<int, SkinnedMeshRenderer> handMeshRenderers = new Dictionary<int, SkinnedMeshRenderer>();
@@ -155,17 +155,17 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
             // Add new hand
             var pointers = RequestPointers(SupportedControllerType.ArticulatedHand, handedness);
             var inputSourceType = InputSourceType.Hand;
-            var inputSource = InputSystem?.RequestNewGenericInputSource($"Leap Motion Hand {handId}", pointers, inputSourceType);
+            var inputSource = CoreServices.InputSystem?.RequestNewGenericInputSource($"Leap Motion Hand {handId}", pointers, inputSourceType);
 
             var controller = new LeapMotionHand(TrackingState.Tracked, handedness, inputSource);
-            controller.SetupConfiguration(typeof(LeapMotionHand), inputSourceType);
+            controller.SetupConfiguration(typeof(LeapMotionHand));
 
             for (int i = 0; i < controller.InputSource?.Pointers?.Length; i++)
             {
                 controller.InputSource.Pointers[i].Controller = controller;
             }
 
-            InputSystem?.RaiseSourceDetected(controller.InputSource, controller);
+            CoreServices.InputSystem?.RaiseSourceDetected(controller.InputSource, controller);
 
             trackedHands.Add(handId, controller);
             UpdateActiveControllers();
