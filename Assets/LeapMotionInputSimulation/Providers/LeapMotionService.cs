@@ -182,6 +182,7 @@ namespace Microsoft.MixedReality.Toolkit.WindowsMixedReality.Input
                 CoreServices.InputSystem?.RaiseSourceLost(controller.InputSource, controller);
 
                 trackedHands.Remove(handId);
+                RecyclePointers(controller.InputSource);
                 UpdateActiveControllers();
             }
         }
