@@ -1,3 +1,11 @@
+# Notice
+Leap Motion Controller is officially supported in MRTK v2.4.0.  
+It is recommended that you use the official controller.
+
+https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/CrossPlatform/LeapMotionMRTK.html
+
+---
+
 # LeapMotionInputForMRTK
 LeapMotionInputForMRTK simulates hand inputs for MRTK with Leap Motion.
 
